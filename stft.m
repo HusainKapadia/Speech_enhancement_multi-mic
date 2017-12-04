@@ -1,27 +1,29 @@
-function Xw = stft(x, win, n1, n2, mic)
- x = x(:, mic);
- 
- if nargin == 2
-     n1 = 1;
-     n2 = length(x);
- end
- 
- N = n2-n1+1;
- 
- switch win
-     case 1 
-         w = ones(N,1);
-     case 2 
-         w = hamming(N);
-     case 3 
-         w = hanning(N);
-     case 4 
-         w = bartlett(N);
-     case 5 
-         w = blackman(N);
- end
- 
- xw = x(n1:n2).*w/norm(w);
- Xw = fft(xw, N);
+function Y = stft(x, win, frame_len, overlap, mic, fs)
+     Y = zeros(size(x));
+     L = frame_len*fs/1000;                %frame length                         %percent overlap
+     D = (1 - 0.01*overlap)*L;             %start index for overlap
+     K = 1 + floor((length(x)-L)/D);       %number of sections
+
+     switch win
+         case 1 
+             w = ones(L,1);
+         case 2 
+             w = hamming(L);
+         case 3 
+             w = hanning(L);
+         case 4 
+             w = bartlett(L);
+         case 5 
+             w = blackman(L);
+     end
+
+     for j = 1:mic
+         n1 = 1;                           %start index
+         for i=1:K
+             xw(n1:n1+L-1, j) = x(n1:n1+L-1, j).*w/norm(w);
+             Y(n1:n1+L-1, j) = Y(n1:n1+L-1, j) + fft(xw(n1:n1+L-1, j), L);
+             n1 = n1 + D;
+         end
+     end
 
 end
