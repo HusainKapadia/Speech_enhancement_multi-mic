@@ -16,22 +16,21 @@ S_e = zeros(size(S));
 var_emp = zeros(1, m);
 mse = zeros(1, m);
 CRLB = zeros(1, m);
-CRLBpf = zeros(size(S,1), m);
+CRLBpf = zeros(1, size(S,1));
 
 for i = 1:m
     Cw = zeros(i);
-    %Cw2 = zeros(size(Y,1));
     
     %% STFT with overlap
     Y = stft(y, 3, l, o, i, fs);
     
     %% Noise Covariance 
+    P1 = permute(Y, [1 3 2]);
     for j = 1:200
-        P1 = permute(Y, [1 3 2]);
-        U = P1(:,:,j);
-        Cw = (j*Cw + cov(U))/(j+1);
-        %Cw2 = (j*Cw2 + cov(U.'))/(j+1);
-    end 
+        U1 = P1(:,:,j);
+        Cw = (j*Cw + cov(U1))/(j+1);
+    end
+    
     Ct = var(S);
     mt = mean(S);
     
@@ -49,8 +48,6 @@ for i = 1:m
     a = ones(1, i);
     CRLB(i) = real(1/(a*inv(Cw)*a'));
     
-    %h = eye(size(Y,1));
-    %CRLBpf(i, :) = mean(real(inv(h'*inv(Cw2)*h)))';
     %% STIFT with overlap add
     s_e = stift(S_e, 3, l, o, 1, fs);
 
@@ -61,7 +58,7 @@ end
 %% Plots
 figure()
 subplot(3,1,1)
-plot(y), title('Noisy Speech');
+plot3(y,1:N,1:m), title('Noisy Speech');
 subplot(3,1,2)
 plot(s_e), title('Corrected Speech');
 subplot(3,1,3)
@@ -77,8 +74,19 @@ legend('show');
 figure()
 stem(mse), title('Mean Square Error');
 
-%figure()
-%stem(CRLBpf), title('CRLB per frequency band');
+P2 = permute(Y, [3 1 2]);
+for i = 1:size(Y,1)
+    Cw2 = zeros(i);
+    for k = 1:200
+        U2 = P2(:,1:i,k);
+        Cw2 = (k*Cw2 + cov(U2))/(k+1);
+    end
+    h = ones(1,i);
+    CRLBpf(i) = real(inv(h*inv(Cw2)*h'));
+end
+
+figure()
+stem(CRLBpf), title('CRLB per frequency band');
 
 %% Sound
 sound(0.1*s_e, fs)
