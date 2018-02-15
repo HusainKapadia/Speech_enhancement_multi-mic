@@ -30,7 +30,7 @@ for i = 1:m
         U1 = P1(:,:,j);
         Cw = (j*Cw + cov(U1))/(j+1);
     end
-    
+    %disp(real(Cw));
     Ct = var(S);
     mt = mean(S);
     
